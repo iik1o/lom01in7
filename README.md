@@ -20,6 +20,10 @@ python 最小框选.py
 
 # 颜色分割
 python 颜色分割.py
+
+#tag识别
+
+#虚拟机的安装以及可以正常运行IDE
 📄  开源协议
 
 MIT License，可自由使用、修改和分发。
