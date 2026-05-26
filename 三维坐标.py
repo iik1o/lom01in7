@@ -1,38 +1,43 @@
 import cv2
 import numpy as np
+K = np.array([[718.80106938, 0, 505.74855641],
+             [0, 764.67086684, 228.16567087],
+             [0, 0, 1]], np.float32)
+dist = np.array([[-0.67217889, 0.77494974, 0.01589332, -0.08113757, -0.32714995]], np.float32)
 
-K = np.array([[718.8, 0, 505.75], [0, 764.67, 228.17], [0, 0, 1]], dtype=np.float32)
-dist = np.array([-0.672, 0.775, 0.0159, -0.0811, -0.327])
-
-obj = np.float32([[-25, -25, 0], [25, -25, 0], [25, 25, 0], [-25, 25, 0]])
-axis = np.float32([[30, 0, 0], [0, 30, 0], [0, 0, 30]])
+obj = np.array([[0,0,0],[50,0,0],[0,50,0],[50,50,0]], np.float32)
+axis = np.array([[40,0,0],[0,40,0],[0,0,40]], np.float32)
 
 cap = cv2.VideoCapture(0)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH,640)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT,480)
+
 while True:
-    ret, frame = cap.read()
+    ret, frm = cap.read()
     if not ret: break
+    gray = cv2.GaussianBlur(cv2.cvtColor(frm,cv2.COLOR_BGR2GRAY),(3,3),0)
+    harris = cv2.dilate(cv2.cornerHarris(gray,2,3,0.04),None)
+    y,x = np.where(harris > 0.01*harris.max())
+    pts = np.column_stack((x,y)).astype(np.float32)
 
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    _, th = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY_INV)
-    contours, _ = cv2.findContours(th, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if len(pts)==4:
+        top4 = pts[np.argsort(harris[y,x])[-4:]]
+        tl,br = top4[np.argmin(top4.sum(1))], top4[np.argmax(top4.sum(1))]
+        tr,bl = top4[np.argmin(np.diff(top4,1))], top4[np.argmax(np.diff(top4,1))]
+        img_pts = np.array([tl,tr,bl,br],np.float32)
 
-    if contours:
-        cnt = max(contours, key=cv2.contourArea)
-        x, y, w, h = cv2.boundingRect(cnt)   
- 
-        image_pts = np.array([[x, y], [x+w, y], [x+w, y+h], [x, y+h]], dtype=np.float32)
+        for p in img_pts:
+            cv2.circle(frm,(int(p[0]),int(p[1])),5,(255,0,0),-1)
 
-        _, rvec, tvec = cv2.solvePnP(obj, image_pts, K, dist)
-        axis_img, _ = cv2.projectPoints(axis, rvec, tvec, K, dist)
-        center, _ = cv2.projectPoints(np.array([[0,0,0]]), rvec, tvec, K, dist)
-        ctr = tuple(center.ravel().astype(int))
+        _,rvec,tvec = cv2.solvePnP(obj,img_pts,K,dist)
+        ax_pts,_ = cv2.projectPoints(axis,rvec,tvec,K,dist)
+        ax_pts = ax_pts.astype(int)
+        o = tuple(img_pts[0].astype(int))
+        cv2.line(frm,o,tuple(ax_pts[0][0]),(0,0,255),2)
+        cv2.line(frm,o,tuple(ax_pts[1][0]),(0,255,0),2)
+        cv2.line(frm,o,tuple(ax_pts[2][0]),(255,255,0),2)
 
-        cv2.line(frame, ctr, tuple(axis_img[0].ravel().astype(int)), (0,0,255), 3)
-        cv2.line(frame, ctr, tuple(axis_img[1].ravel().astype(int)), (0,255,0), 3)
-        cv2.line(frame, ctr, tuple(axis_img[2].ravel().astype(int)), (255,0,0), 3)
-
-    cv2.imshow('pose', frame)
-    if cv2.waitKey(1) == ord('q'): break
-
+    cv2.imshow("Pose",frm)
+    if cv2.waitKey(1): break
 cap.release()
 cv2.destroyAllWindows()
