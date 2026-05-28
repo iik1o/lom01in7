@@ -12,7 +12,7 @@ cap = cv2.VideoCapture(0)
 while True:
     ret, frme = cap.read()
     if not ret: break
-    gray = cv2.GaussianBlur(cv2.cvtColor(frm,cv2.COLOR_BGR2GRAY),(3,3),0)
+    gray = cv2.GaussianBlur(cv2.cvtColor(frme,cv2.COLOR_BGR2GRAY),(3,3),0)
     harris = cv2.dilate(cv2.cornerHarris(gray,2,3,0.04),None)
     y,x = np.where(harris > 0.01*harris.max())
     pts = np.column_stack((x,y)).astype(np.float32)
