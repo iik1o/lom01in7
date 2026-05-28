@@ -10,7 +10,7 @@ axis = np.array([[40,0,0],[0,40,0],[0,0,40]], np.float32)
 
 cap = cv2.VideoCapture(0)
 while True:
-    ret, frm = cap.read()
+    ret, frme = cap.read()
     if not ret: break
     gray = cv2.GaussianBlur(cv2.cvtColor(frm,cv2.COLOR_BGR2GRAY),(3,3),0)
     harris = cv2.dilate(cv2.cornerHarris(gray,2,3,0.04),None)
@@ -31,7 +31,7 @@ while True:
         cv2.line(frm,o,tuple(ax_pts[1][0]),(0,255,0),2)
         cv2.line(frm,o,tuple(ax_pts[2][0]),(255,255,0),2)
 
-    cv2.imshow("Pose",frm)
+    cv2.imshow("Pose",frme)
     if cv2.waitKey(1): break
 cap.release()
 cv2.destroyAllWindows()
