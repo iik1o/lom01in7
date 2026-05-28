@@ -23,9 +23,6 @@ while True:
         tr,bl = top4[np.argmin(np.diff(top4,1))], top4[np.argmax(np.diff(top4,1))]
         img_pts = np.array([tl,tr,bl,br],np.float32)
 
-        for p in img_pts:
-            cv2.circle(frm,(int(p[0]),int(p[1])),5,(255,0,0),-1)
-
         _,rvec,tvec = cv2.solvePnP(obj,img_pts,K,dist)
         ax_pts,_ = cv2.projectPoints(axis,rvec,tvec,K,dist)
         ax_pts = ax_pts.astype(int)
